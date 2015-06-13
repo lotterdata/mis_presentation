@@ -12,17 +12,31 @@ output: slidy_presentation
 - Direct data exist but are not public, so how can we document this? 
 - Can back out by relating number of winners to numbers drawn.
 - Number of winners is only informative if total number of players is known. 
-- Otherwise we can model parimutuel prizes as a function of the numbers drawn.  
+- Otherwise we can model parimutuel prizes as a function of the numbers drawn.
+
+## What Random Selection Would Look Like
+
+## What Actual Selection Looks Like
 
 
+
+## Modeling When Sales Data Are Available
+
+## Modeling Prize Amounts
+
+## Validating on Recent Data
+
+## Validating on New Jersey Data
+
+## Getting Data
 
 ## References
 
 - My github repo   
-https://github.com/lotterdata/mis_presentation  
+<https://github.com/lotterdata/mis_presentation>  
 
 - Number selection algorithm exploiting this idea  
-http://www.r-bloggers.com/picking-lotto-numbers/  
+<http://www.r-bloggers.com/picking-lotto-numbers/> 
 
 - A recent article in a similar vein  
-http://www.r-bloggers.com/simple-data-science-to-maximize-return-on-lottery-investment/  
+<http://www.r-bloggers.com/simple-data-science-to-maximize-return-on-lottery-investment/>

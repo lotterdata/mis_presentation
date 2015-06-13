@@ -13,7 +13,7 @@ extract_wins <- function(x){
 }
 
 date <- update(today(),years=2012,months=1,days=1)
-end.date <- update(today(),years=2015,months=1,days=1)
+end.date <- update(today(),years=2015,months=6,days=12)
 
 final <- NULL
 while(date < end.date){
@@ -65,5 +65,5 @@ names(final) <- c('drawdate','sales',
                   'winners_5','winners_4','winners_3','winners_2',
                   'prize_5','prize_4','prize_3','prize_2')
 
-write.table(final,"tx_cash5.csv",sep=",",row.names=FALSE,quote=FALSE)
+write.table(final,"tx_data\\tx_cash5.csv",sep=",",row.names=FALSE,quote=FALSE)
 
