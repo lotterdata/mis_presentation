@@ -14,10 +14,84 @@ output: slidy_presentation
 - Number of winners is only informative if total number of players is known. 
 - Otherwise we can model parimutuel prizes as a function of the numbers drawn.
 
-## What Random Selection Would Look Like
+## Games Discussed Here
 
-## What Actual Selection Looks Like
+* Texas Cash 5  
+    + Players and lottery choose 5 integers from 1 to 37
+    + Target prize for 3 matches is $10.00
+    + Jan. 1, 2012 to June 12, 2015
+* Pennsylvania Cash 5
+    + Players and lottery choose 5 integers from 1 to 43
+    + Target prize for 3 matches is $11.50
+    + Jan. 1, 2012 to June 12, 2015
+* New Jersey Cash 5  
+    + Players and lottery choose 5 integers from 1 to 43
+    + Target prize for 3 matches is $15.00 
+    + Sept. 14, 2014 to June 12, 2015
+  
 
+## Random vs. Actual, Texas
+
+```{r}
+tx.actual <- read.table("tx_data\\tx_cash5.csv",header=TRUE,sep=",") 
+sum(tx.actual$winners_3)/sum(tx.actual$sales)
+dhyper(3,5,32,5)
+```
+
+## Random vs. Actual, Texas
+
+```{r}
+draws <- nrow(tx.actual)
+pop <- 150000
+prob <- dhyper(3,5,32,5)
+pool <- sum(tx.actual$prize_3*tx.actual$winners_3)/sum(tx.actual$sales)
+
+set.seed(12345)
+sim.winners <- rpois(draws,pop*prob)
+sim.prizes <- round(pop*pool/sim.winners)
+sim.pct.win <- sim.winners/pop
+
+actual.prizes <- tx.actual$prize_3
+actual.pct.win  <- tx.actual$winners_3/tx.actual$sales
+```
+
+## Random vs. Actual, Texas
+
+```{r, echo=FALSE}
+par(mfrow=c(2,2))
+hist(sim.prizes,xlab="",main="Simulated Prize Distribution")
+hist(actual.prizes,xlab="",main="Actual Prize Distribution")
+hist(round(sim.pct.win,3),xlab="",main="Simulated Win Percentage Distribution")
+hist(round(actual.pct.win,3),xlab="",main="Actual Win Percentage Distribution")
+
+rm(tx.actual)
+```
+
+
+## Random vs. Actual, Pennsylvania
+
+```{r}
+pa.actual <- read.table("pa_data\\pa_cash5.csv",header=TRUE,sep=",") 
+
+draws <- nrow(pa.actual)
+pop <- 400000
+prob <- dhyper(3,5,38,5)
+pool <- prob*mean(pa.actual$prize_3)
+
+set.seed(12345)
+sim.winners <- rpois(draws,pop*prob)
+sim.prizes <- 0.5*round(2*pop*pool/sim.winners)
+
+actual.prizes <- pa.actual$prize_3
+```
+
+## Random vs. Actual, Pennsylvania
+
+```{r,echo=FALSE}
+par(mfrow=c(1,2))
+hist(sim.prizes,xlab="",main="Simulated Prize Distribution")
+hist(actual.prizes,xlab="",main="Actual Prize Distribution")
+```
 
 
 ## Modeling When Sales Data Are Available
@@ -27,6 +101,8 @@ output: slidy_presentation
 ## Validating on Recent Data
 
 ## Validating on New Jersey Data
+
+## Comment on Deriving Player Choices
 
 ## Getting Data
 
