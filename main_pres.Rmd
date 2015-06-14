@@ -2,7 +2,7 @@
 title: "How to Lose Less Money in the Lottery"
 author: "Stephen Penrice"
 date: "Friday, June 19, 2015"
-output: slidy_presentation
+output: ioslides_presentation
 ---
 
 
@@ -61,8 +61,10 @@ actual.pct.win  <- tx.actual$winners_3/tx.actual$sales
 par(mfrow=c(2,2))
 hist(sim.prizes,xlab="",main="Simulated Prize Distribution")
 hist(actual.prizes,xlab="",main="Actual Prize Distribution")
-hist(round(sim.pct.win,3),xlab="",main="Simulated Win Percentage Distribution")
-hist(round(actual.pct.win,3),xlab="",main="Actual Win Percentage Distribution")
+hist(round(sim.pct.win,4),xlab="",main="Simulated Win Percentage Distribution",
+     breaks = c(0.007,0.008,0.009,0.01,0.011,0.012,0.013,0.014,0.015,0.016,0.017))
+hist(round(actual.pct.win,4),xlab="",main="Actual Win Percentage Distribution",
+     breaks = c(0.007,0.008,0.009,0.01,0.011,0.012,0.013,0.014,0.015,0.016,0.017))
 
 rm(tx.actual)
 ```
@@ -78,7 +80,7 @@ pop <- 400000
 prob <- dhyper(3,5,38,5)
 pool <- prob*mean(pa.actual$prize_3)
 
-set.seed(12345)
+set.seed(54321)
 sim.winners <- rpois(draws,pop*prob)
 sim.prizes <- 0.5*round(2*pop*pool/sim.winners)
 
@@ -89,7 +91,8 @@ actual.prizes <- pa.actual$prize_3
 
 ```{r,echo=FALSE}
 par(mfrow=c(1,2))
-hist(sim.prizes,xlab="",main="Simulated Prize Distribution")
+hist(sim.prizes,xlab="",main="Simulated Prize Distribution", xaxt="n")
+axis(side = 1, at = c(11.0,11.5,12.0) )
 hist(actual.prizes,xlab="",main="Actual Prize Distribution")
 ```
 
