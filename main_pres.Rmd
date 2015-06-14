@@ -1,5 +1,5 @@
 ---
-title: "How to Lose Less Money in the Lottery"
+title: "How to Lose Less Money Playing the Lottery"
 author: "Stephen Penrice"
 date: "Friday, June 19, 2015"
 output: ioslides_presentation
@@ -65,8 +65,6 @@ hist(round(sim.pct.win,4),xlab="",main="Simulated Win Percentage Distribution",
      breaks = c(0.007,0.008,0.009,0.01,0.011,0.012,0.013,0.014,0.015,0.016,0.017))
 hist(round(actual.pct.win,4),xlab="",main="Actual Win Percentage Distribution",
      breaks = c(0.007,0.008,0.009,0.01,0.011,0.012,0.013,0.014,0.015,0.016,0.017))
-
-rm(tx.actual)
 ```
 
 
@@ -98,6 +96,43 @@ hist(actual.prizes,xlab="",main="Actual Prize Distribution")
 
 
 ## Modeling When Sales Data Are Available
+
+Poisson Regression  
+
+Model 1:
+$$ \ln(y) = \beta t + c +\ln(s)$$
+
+where $y$ is the number of winners, $t$ is the sum of the numbers drawn, and $s$ is 
+sales.
+
+## Modeling When Sales Data Are Available
+
+```{r, results='asis'}
+tx.actual$drawdate <- as.Date(as.character(tx.actual$drawdate))
+tx.train <- tx.actual[tx.actual$drawdate<='2014-06-12',]
+tx.test <- tx.actual[tx.actual$drawdate>'2014-06-12',]
+model1 <- glm(winners_3~I(n1+n2+n3+n4+n5),data=tx.train,
+              family=poisson,
+              offset=log(sales))
+knitr::kable(summary(model1)$coefficients,digits=4)
+```
+
+## Modeling When Sales Data Are Available
+
+Model 2:
+$$ \ln(y) = \beta_1 n_1 + \beta_2 n_2 + \beta_3 n_3 + \beta_4 n_4 + \beta_5 n_5 + c +\ln(s)$$
+
+where $y$ is the number of winners, $t$ is the sum of the numbers drawn, and $s$ is 
+sales.
+
+## Modeling When Sales Data Are Available
+
+```{r, results='asis',echo=FALSE}
+model2 <- glm(winners_3~n1+n2+n3+n4+n5,data=tx.train,
+              family=poisson,
+              offset=log(sales))
+knitr::kable(summary(model2)$coefficients,digits=4)
+```
 
 ## Modeling Prize Amounts
 
