@@ -126,13 +126,13 @@
 </article></slide><slide class=''><hgroup><h2>Random vs. Actual, Texas</h2></hgroup><article  id="random-vs.-actual-texas">
 
 <pre class = 'prettyprint lang-r'>tx.actual &lt;- read.table(&quot;tx_data\\tx_cash5.csv&quot;,header=TRUE,sep=&quot;,&quot;) 
-sum(tx.actual$winners_3)/sum(tx.actual$sales)</pre>
-
-<pre >## [1] 0.01137874</pre>
-
-<pre class = 'prettyprint lang-r'>dhyper(3,5,32,5)</pre>
+dhyper(3,5,32,5)</pre>
 
 <pre >## [1] 0.01137883</pre>
+
+<pre class = 'prettyprint lang-r'>sum(tx.actual$winners_3)/sum(tx.actual$sales)</pre>
+
+<pre >## [1] 0.01137874</pre>
 
 </article></slide><slide class=''><hgroup><h2>Random vs. Actual, Texas</h2></hgroup><article  id="random-vs.-actual-texas-1">
 
@@ -176,19 +176,21 @@ actual.prizes &lt;- pa.actual$prize_3</pre>
 
 <p>Poisson Regression</p>
 
-<p>Model 1: \[ \ln(y) = \beta t + c +\ln(s)\]</p>
+<p>Model TX1: \[ \ln(y) = \beta t + c +\ln(s)\]</p>
 
-<p>where \(y\) is the number of winners, \(t\) is the sum of the numbers drawn, and \(s\) is sales.</p>
+<p>where \(y\) is the number of 3-match winners, \(t\) is the sum of the numbers drawn, and \(s\) is sales.</p>
+
+<p>Interpretation: \[\beta t + c\] estimates the log of the percentage of players who match 3 numbers.</p>
 
 </article></slide><slide class=''><hgroup><h2>Modeling When Sales Data Are Available</h2></hgroup><article  id="modeling-when-sales-data-are-available-1">
 
 <pre class = 'prettyprint lang-r'>tx.actual$drawdate &lt;- as.Date(as.character(tx.actual$drawdate))
-tx.train &lt;- tx.actual[tx.actual$drawdate&lt;=&#39;2014-06-12&#39;,]
-tx.test &lt;- tx.actual[tx.actual$drawdate&gt;&#39;2014-06-12&#39;,]
-model1 &lt;- glm(winners_3~I(n1+n2+n3+n4+n5),data=tx.train,
+tx.train &lt;- tx.actual[tx.actual$drawdate &lt;= &#39;2014-06-12&#39;,]
+tx.test &lt;- tx.actual[tx.actual$drawdate &gt; &#39;2014-06-12&#39;,]
+tx1 &lt;- glm(winners_3~I(n1+n2+n3+n4+n5),data=tx.train,
               family=poisson,
               offset=log(sales))
-knitr::kable(summary(model1)$coefficients,digits=4)</pre>
+knitr::kable(summary(tx1)$coefficients,digits=4)</pre>
 
 <table class = 'rmdtable'>
 <tr class="header">
@@ -216,7 +218,7 @@ knitr::kable(summary(model1)$coefficients,digits=4)</pre>
 
 </article></slide><slide class=''><hgroup><h2>Modeling When Sales Data Are Available</h2></hgroup><article  id="modeling-when-sales-data-are-available-2">
 
-<p>Model 2: \[ \ln(y) = \beta_1 n_1 + \beta_2 n_2 + \beta_3 n_3 + \beta_4 n_4 + \beta_5 n_5 + c +\ln(s)\]</p>
+<p>Model TX2: \[ \ln(y) = \beta_1 n_1 + \beta_2 n_2 + \beta_3 n_3 + \beta_4 n_4 + \beta_5 n_5 + c +\ln(s)\]</p>
 
 <p>where \(y\) is the number of winners, \(t\) is the sum of the numbers drawn, and \(s\) is sales.</p>
 
@@ -275,6 +277,110 @@ knitr::kable(summary(model1)$coefficients,digits=4)</pre>
 </table>
 
 </article></slide><slide class=''><hgroup><h2>Modeling Prize Amounts</h2></hgroup><article  id="modeling-prize-amounts">
+
+<p>Without sales data, we resort to modeling prizes as a function of the numbers drawn. Linear models are not justifiable from an inference point of view, but they could provide good predictions.</p>
+
+<p>Model PA1:<br/>\[ y = \beta t + c\]<br/>where \(y\) is the 3-match prize and \(t\) is the sum of the numbers drawn.</p>
+
+</article></slide><slide class=''><hgroup><h2>Modeling Prize Amounts</h2></hgroup><article  id="modeling-prize-amounts-1">
+
+<pre class = 'prettyprint lang-r'>pa.actual$drawdate &lt;- as.Date(as.character(pa.actual$drawdate))
+pa.train &lt;- pa.actual[pa.actual$drawdate &lt;= &#39;2014-06-12&#39;,]
+pa.test &lt;- pa.actual[pa.actual$drawdate &gt; &#39;2014-06-12&#39;,]</pre>
+
+<pre class = 'prettyprint lang-r'>pa1 &lt;- lm(prize_3~I(n1+n2+n3+n4+n5),data=pa.train)
+knitr::kable(summary(pa1)$coefficients,digits=4)</pre>
+
+<table class = 'rmdtable'>
+<tr class="header">
+<th align="left"></th>
+<th align="right">Estimate</th>
+<th align="right">Std. Error</th>
+<th align="right">t value</th>
+<th align="right">Pr(&gt;|t|)</th>
+</tr>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">3.6864</td>
+<td align="right">0.1751</td>
+<td align="right">21.0561</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">I(n1 + n2 + n3 + n4 + n5)</td>
+<td align="right">0.0714</td>
+<td align="right">0.0016</td>
+<td align="right">45.9836</td>
+<td align="right">0</td>
+</tr>
+</table>
+
+<pre class = 'prettyprint lang-r'>print(summary(pa1)$r.squared)</pre>
+
+<p>[1] 0.7033083</p>
+
+</article></slide><slide class=''><hgroup><h2>Some Refinements</h2></hgroup><article  id="some-refinements">
+
+<p>Besides small numbers, players tend to choose combinations of numbers that are physically close on a playslip. So we&#39;ll add variables to proxy combinations selected along a row or column.</p>
+
+<pre class = 'prettyprint lang-r'>library(dplyr,warn.conflicts=FALSE)
+library(magrittr)
+
+pa.train &lt;- mutate(pa.train,range=n5-n1) %&gt;%
+           mutate(spacing = 
+                  sqrt((((n2-n1)^2+(n3-n2)^2+(n4-n3)^2+(n5-n4)^2)/4)-
+                               ((n5-n1)/4)^2)) </pre>
+
+</article></slide><slide class=''><hgroup><h2>Some Refinements</h2></hgroup><article  id="some-refinements-1">
+
+<p>Model PA2:<br/>\[ y = \beta_1 t + \beta_2 r + \beta_3 s + c\]<br/>where \(y\) is the 3-match prize, \(t\) is the sum of the numbers drawn, \(r\) is the range of the numbers drawn, and \(s\) is the standard deviation of the gaps between consecutive numbers drawn.</p>
+
+</article></slide><slide class=''><hgroup><h2>Some Refinements</h2></hgroup><article  id="some-refinements-2">
+
+<pre class = 'prettyprint lang-r'>pa2 &lt;- lm(prize_3~I(n1+n2+n3+n4+n5)+range+spacing,data=pa.train)
+knitr::kable(summary(pa2)$coefficients,digits=4)</pre>
+
+<table class = 'rmdtable'>
+<tr class="header">
+<th align="left"></th>
+<th align="right">Estimate</th>
+<th align="right">Std. Error</th>
+<th align="right">t value</th>
+<th align="right">Pr(&gt;|t|)</th>
+</tr>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">1.2168</td>
+<td align="right">0.2158</td>
+<td align="right">5.6384</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">I(n1 + n2 + n3 + n4 + n5)</td>
+<td align="right">0.0733</td>
+<td align="right">0.0014</td>
+<td align="right">54.1661</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">range</td>
+<td align="right">0.0553</td>
+<td align="right">0.0059</td>
+<td align="right">9.3640</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">spacing</td>
+<td align="right">0.1250</td>
+<td align="right">0.0194</td>
+<td align="right">6.4286</td>
+<td align="right">0</td>
+</tr>
+</table>
+
+<pre class = 'prettyprint lang-r'>print(summary(pa2)$r.squared)</pre>
+
+<p>[1] 0.7767239</p>
 
 </article></slide><slide class=''><hgroup><h2>Validating on Recent Data</h2></hgroup><article  id="validating-on-recent-data">
 

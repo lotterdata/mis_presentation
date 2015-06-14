@@ -21,7 +21,9 @@ for(year in c("2012","2013","2014","2015")){
         part1 <- pa_cash_5 %>% html_nodes("h2:nth-child(4)") %>% html_text() 
         part2 <- pa_cash_5 %>% html_nodes("p:nth-child(5)") %>% html_text() 
         
-        date <- str_sub(part1,start=1,end=8)
+        date <- str_c("20",str_sub(part1,start=7,end=8),
+                      "-",str_sub(part1,start=1,end=2),
+                      "-",str_sub(part1,start=4,end=5))
         
         n1 <- as.numeric(str_sub(part1,start = 35, end = 36))
         n2 <- as.numeric(str_sub(part1,start = 39, end = 40))
