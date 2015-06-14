@@ -149,15 +149,28 @@ where $y$ is the 3-match prize and $t$ is the sum of the numbers drawn.
 
 ## Modeling Prize Amounts
 ```{r}
+library(dplyr,warn.conflicts=FALSE)
 pa.actual$drawdate <- as.Date(as.character(pa.actual$drawdate))
+pa.actual <- mutate(pa.actual,draw_sum=n1+n2+n3+n4+n5)
 pa.train <- pa.actual[pa.actual$drawdate <= '2014-06-12',]
 pa.test <- pa.actual[pa.actual$drawdate > '2014-06-12',]
 ```
 
 ```{r, results='asis'}
-pa1 <- lm(prize_3~I(n1+n2+n3+n4+n5),data=pa.train)
+pa1 <- lm(prize_3~draw_sum,data=pa.train)
 knitr::kable(summary(pa1)$coefficients,digits=4)
 print(summary(pa1)$r.squared)
+```
+
+## Modeling Prize Amounts
+
+```{r,echo=FALSE}
+library(ggplot2)
+
+g <- ggplot(pa.train,aes(draw_sum,prize_3))
+g + 
+  geom_point() 
+
 ```
 
 ## Some Refinements
@@ -166,12 +179,12 @@ Besides small numbers, players tend to choose combinations of numbers that are
 physically close on a playslip. So we'll add variables to proxy combinations
 selected along a row or column.
 
-```{r,warning=FALSE}
-library(dplyr,warn.conflicts=FALSE)
+```{r}
+
 library(magrittr)
 
 pa.train <- mutate(pa.train,range=n5-n1) %>%
-           mutate(spacing = 
+            mutate(spacing = 
                   sqrt((((n2-n1)^2+(n3-n2)^2+(n4-n3)^2+(n5-n4)^2)/4)-
                                ((n5-n1)/4)^2)) 
 ```
@@ -188,10 +201,58 @@ between consecutive numbers drawn.
 ## Some Refinements
 
 ```{r,results='asis'}
-pa2 <- lm(prize_3~I(n1+n2+n3+n4+n5)+range+spacing,data=pa.train)
+pa2 <- lm(prize_3~draw_sum+range+spacing,data=pa.train)
 knitr::kable(summary(pa2)$coefficients,digits=4)
 print(summary(pa2)$r.squared)
 ```
+
+## Interaction: Time Since Last Jackpot
+
+Habitual players may have a stronger tendency to choose "favorite" numbers. 
+So we calculate where each draw is in the sequence since the last jackpot.
+
+```{r}
+draw.since.jp <- function(x) {
+    jp.dates <- filter(pa.actual, prize_5 > 0 & drawdate < x) %>%
+                arrange(desc(drawdate))
+                    
+    return(nrow(filter(pa.actual,
+                       drawdate > jp.dates$drawdate[1] & 
+                       drawdate <= x)))
+}
+
+pa.train <- filter(pa.train, drawdate > 
+                       min(pa.actual$drawdate[pa.actual$prize_5>0]))
+
+pa.train$draw.since.jp <- sapply(pa.train$drawdate,draw.since.jp)
+
+```
+
+## Interaction: Time Since Last Jackpot
+
+```{r,results='asis'}
+pa3 <- lm(prize_3~I(n1+n2+n3+n4+n5)*draw.since.jp,data=pa.train)
+knitr::kable(summary(pa3)$coefficients,digits=4)
+print(summary(pa3)$r.squared)
+```
+
+## Interaction: Time Since Last Jackpot
+
+```{r, echo=FALSE}
+cutpoints <- c(1,2,3,4,200)
+pa.train$hitfact <- cut(pa.train$draw.since.jp,
+                     cutpoints,
+                     include.lowest=TRUE,
+                     right = FALSE)
+
+g <- ggplot(pa.train,aes(draw_sum,prize_3,col=hitfact))
+
+g + 
+  geom_point() +
+  geom_smooth(method="lm",se=FALSE) 
+```
+
+
 
 
 ## Validating on Recent Data
