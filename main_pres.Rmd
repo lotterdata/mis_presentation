@@ -231,7 +231,7 @@ pa.train$draw.since.jp <- sapply(pa.train$drawdate,draw.since.jp)
 ## Interaction: Time Since Last Jackpot
 
 ```{r,results='asis'}
-pa3 <- lm(prize_3~I(n1+n2+n3+n4+n5)*draw.since.jp,data=pa.train)
+pa3 <- lm(prize_3~draw_sum*draw.since.jp,data=pa.train)
 knitr::kable(summary(pa3)$coefficients,digits=4)
 print(summary(pa3)$r.squared)
 ```
@@ -240,18 +240,38 @@ print(summary(pa3)$r.squared)
 
 ```{r, echo=FALSE}
 cutpoints <- c(1,2,3,4,200)
-pa.train$hitfact <- cut(pa.train$draw.since.jp,
+pa.train$jpfactor <- cut(pa.train$draw.since.jp,
                      cutpoints,
                      include.lowest=TRUE,
                      right = FALSE)
+pa.train$jpfactor <- as.character(pa.train$jpfactor)
 
-g <- ggplot(pa.train,aes(draw_sum,prize_3,col=hitfact))
+rename <- function(x){
+    switch(x,
+           "[1,2)"="1",
+           "[2,3)"="2",
+           "[3,4)"="3",
+           "[4,200]"="4+")
+}
+
+pa.train$jpfactor <- sapply(pa.train$jpfactor,rename)
+
+g <- ggplot(pa.train,aes(draw_sum,prize_3,col=jpfactor))
 
 g + 
   geom_point() +
   geom_smooth(method="lm",se=FALSE) 
 ```
 
+## Putting It All Together
+
+```{r}
+tsjp <- split(pa.train,pa.train$jpfactor)
+
+pai <- lapply(tsjp, 
+              function(x) lm(prize_3~draw_sum+range+spacing,data=x))
+
+```
 
 
 
