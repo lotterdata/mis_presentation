@@ -159,7 +159,7 @@ pa.test <- pa.actual[pa.actual$drawdate > '2014-06-12',]
 ```{r, results='asis'}
 pa1 <- lm(prize_3~draw_sum,data=pa.train)
 knitr::kable(summary(pa1)$coefficients,digits=4)
-print(summary(pa1)$r.squared)
+print(summary(pa1)$adj.r.squared)
 ```
 
 ## Modeling Prize Amounts
@@ -203,8 +203,21 @@ between consecutive numbers drawn.
 ```{r,results='asis'}
 pa2 <- lm(prize_3~draw_sum+range+spacing,data=pa.train)
 knitr::kable(summary(pa2)$coefficients,digits=4)
-print(summary(pa2)$r.squared)
+print(summary(pa2)$adj.r.squared)
 ```
+
+## Some Refinements
+
+```{r,echo=FALSE}
+pa.train$fitted.values <- pa2$fitted.values
+g <- ggplot(pa.train,aes(fitted.values,prize_3))
+g + 
+  geom_point() 
+```
+
+
+
+
 
 ## Interaction: Time Since Last Jackpot
 
@@ -233,7 +246,7 @@ pa.train$draw.since.jp <- sapply(pa.train$drawdate,draw.since.jp)
 ```{r,results='asis'}
 pa3 <- lm(prize_3~draw_sum*draw.since.jp,data=pa.train)
 knitr::kable(summary(pa3)$coefficients,digits=4)
-print(summary(pa3)$r.squared)
+print(summary(pa3)$adj.r.squared)
 ```
 
 ## Interaction: Time Since Last Jackpot
@@ -263,6 +276,17 @@ g +
   geom_smooth(method="lm",se=FALSE) 
 ```
 
+## Interaction: Time Since Last Jackpot
+
+```{r,echo=FALSE}
+g <- ggplot(pa.train,aes(fitted.values,prize_3,col=jpfactor))
+
+g + 
+  geom_point() +
+  geom_smooth(method="lm",se=FALSE) 
+```
+
+
 ## Putting It All Together
 
 ```{r}
@@ -273,11 +297,50 @@ pai <- lapply(tsjp,
 
 ```
 
-
-
 ## Validating on Recent Data
 
+```{r}
+pa.test <- mutate(pa.test,range=n5-n1) %>%
+            mutate(spacing = 
+                  sqrt((((n2-n1)^2+(n3-n2)^2+(n4-n3)^2+(n5-n4)^2)/4)-
+                               ((n5-n1)/4)^2))
+
+pa.test$draw.since.jp  <- sapply(pa.test$drawdate,draw.since.jp)
+```
+
 ## Validating on New Jersey Data
+
+```{r}
+
+nj.test <- read.table("nj_data\\nj_cash5.csv",header=TRUE,sep=",") %>%
+           mutate(draw_sum=n1+n2+n3+n4+n5) %>% 
+           mutate(range=n5-n1) %>%
+           mutate(spacing = 
+                  sqrt((((n2-n1)^2+(n3-n2)^2+(n4-n3)^2+(n5-n4)^2)/4)-
+                               ((n5-n1)/4)^2)) 
+
+```
+
+## Validating on New Jersey Data
+
+```{r}
+nj.test$drawdate <- as.Date(as.character(nj.test$drawdate))
+
+draw.since.jp.nj <- function(x) {
+    jp.dates <- filter(nj.test, prize_5 > 0 & drawdate < x) %>%
+                arrange(desc(drawdate))
+                    
+    return(nrow(filter(nj.test,
+                       drawdate > jp.dates$drawdate[1] & 
+                       drawdate <= x)))
+}
+
+nj.test$draw.since.jp <- sapply(nj.test$drawdate,draw.since.jp.nj)
+
+nj.test<- filter(nj.test, drawdate > 
+                       min(nj.test$drawdate[nj.test$prize_5>0]))
+```
+
 
 ## Comment on Deriving Player Choices
 
