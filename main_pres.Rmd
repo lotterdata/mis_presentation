@@ -111,32 +111,21 @@ who match 3 numbers.
 
 ## Modeling When Sales Data Are Available
 
+```{r,echo=FALSE}
+library(dplyr,warn.conflicts=FALSE)
+```
+
 ```{r, results='asis'}
 tx.actual$drawdate <- as.Date(as.character(tx.actual$drawdate))
+tx.actual <- mutate(tx.actual,draw_sum=n1+n2+n3+n4+n5)
 tx.train <- tx.actual[tx.actual$drawdate <= '2014-06-12',]
 tx.test <- tx.actual[tx.actual$drawdate > '2014-06-12',]
-tx1 <- glm(winners_3~I(n1+n2+n3+n4+n5),data=tx.train,
+tx1 <- glm(winners_3~draw_sum,data=tx.train,
               family=poisson,
               offset=log(sales))
 knitr::kable(summary(tx1)$coefficients,digits=4)
 ```
 
-## Modeling When Sales Data Are Available
-
-Model TX2:
-$$ \ln(y) = \beta_1 n_1 + \beta_2 n_2 + \beta_3 n_3 + \beta_4 n_4 + \beta_5 n_5 + c +\ln(s)$$
-
-where $y$ is the number of winners, $t$ is the sum of the numbers drawn, and $s$ is 
-sales.
-
-## Modeling When Sales Data Are Available
-
-```{r, results='asis',echo=FALSE}
-tx2 <- glm(winners_3~n1+n2+n3+n4+n5,data=tx.train,
-              family=poisson,
-              offset=log(sales))
-knitr::kable(summary(tx2)$coefficients,digits=4)
-```
 
 ## Modeling Prize Amounts
 
@@ -150,7 +139,6 @@ where $y$ is the 3-match prize and $t$ is the sum of the numbers drawn.
 
 ## Modeling Prize Amounts
 ```{r}
-library(dplyr,warn.conflicts=FALSE)
 pa.actual$drawdate <- as.Date(as.character(pa.actual$drawdate))
 pa.actual <- mutate(pa.actual,draw_sum=n1+n2+n3+n4+n5)
 pa.train <- pa.actual[pa.actual$drawdate <= '2014-06-12',]
@@ -287,14 +275,29 @@ g +
 ## Putting It All Together
 
 ```{r}
-tsjp <- split(pa.train,pa.train$jpfactor)
+tsjp.train <- split(pa.train,pa.train$jpfactor)
 
-pai <- lapply(tsjp, 
+pai <- lapply(tsjp.train, 
               function(x) lm(prize_3~draw_sum+range+spacing,data=x))
 
 ```
 
 ## Validating on Recent Data
+
+```{r}
+tx.test$predict <- predict(tx1,tx.test,type="response")
+```
+
+```{r,echo=FALSE}
+g <- ggplot(tx.test,aes(predict,winners_3))
+
+g + 
+  geom_point() 
+```
+
+
+## Validating on Recent Data
+
 
 ```{r}
 pa.test <- mutate(pa.test,range=n5-n1) %>%
@@ -344,6 +347,39 @@ g +
   geom_smooth(method="lm",se=FALSE) 
 
 ```
+
+## Validating on Recent Data
+
+```{r}
+tsjp.test <- split(pa.test,pa.test$jpfactor)
+tsjp.test[[1]]$predict3 <- predict(pai[[1]],tsjp.test[[1]])
+tsjp.test[[2]]$predict3 <- predict(pai[[2]],tsjp.test[[2]])
+tsjp.test[[3]]$predict3 <- predict(pai[[3]],tsjp.test[[3]])
+tsjp.test[[4]]$predict3 <- predict(pai[[4]],tsjp.test[[4]])
+
+results3 <- data.frame(predict=c(tsjp.test[[1]]$predict3,
+                                     tsjp.test[[2]]$predict3,
+                                     tsjp.test[[3]]$predict3,
+                                     tsjp.test[[4]]$predict3),
+                       actual=c(tsjp.test[[1]]$prize_3,
+                                    tsjp.test[[2]]$prize_3,
+                                    tsjp.test[[3]]$prize_3,
+                                    tsjp.test[[4]]$prize_3)
+                       )
+```
+
+## Validating on Recent Data
+
+```{r,echo=FALSE}
+sqrt(mean((results3$actual-results3$predict)^2))
+g <- ggplot(results3,aes(predict,actual))
+
+g + 
+  geom_point() +
+  geom_smooth(method="lm",se=FALSE) 
+```
+
+
 
 ## Validating on New Jersey Data
 
