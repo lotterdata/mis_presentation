@@ -33,8 +33,9 @@ output: ioslides_presentation
 ## Random vs. Actual, Texas
 
 ```{r}
-tx.actual <- read.table("tx_data\\tx_cash5.csv",header=TRUE,sep=",") 
 dhyper(3,5,32,5)
+
+tx.actual <- read.table("tx_data\\tx_cash5.csv",header=TRUE,sep=",") 
 sum(tx.actual$winners_3)/sum(tx.actual$sales)
 ```
 
@@ -215,10 +216,6 @@ g +
   geom_point() 
 ```
 
-
-
-
-
 ## Interaction: Time Since Last Jackpot
 
 Habitual players may have a stronger tendency to choose "favorite" numbers. 
@@ -306,6 +303,46 @@ pa.test <- mutate(pa.test,range=n5-n1) %>%
                                ((n5-n1)/4)^2))
 
 pa.test$draw.since.jp  <- sapply(pa.test$drawdate,draw.since.jp)
+
+pa.test$jpfactor <- cut(pa.test$draw.since.jp,
+                     cutpoints,
+                     include.lowest=TRUE,
+                     right = FALSE)
+pa.test$jpfactor <- as.character(pa.test$jpfactor)
+
+pa.test$jpfactor <- sapply(pa.test$jpfactor,rename)
+
+```
+
+## Validating on Recent Data
+
+```{r}
+pa.test$predict1 <- predict(pa1,pa.test)
+pa.test$predict2 <- predict(pa2,pa.test)
+```
+
+## Validating on Recent Data
+
+```{r,echo=FALSE}
+sqrt(mean((pa.test$prize_3-pa.test$predict1)^2))
+g <- ggplot(pa.test,aes(predict1,prize_3,col=jpfactor))
+
+g + 
+  geom_point() +
+  geom_smooth(method="lm",se=FALSE) 
+
+```
+
+## Validating on Recent Data
+
+```{r,echo=FALSE}
+sqrt(mean((pa.test$prize_3-pa.test$predict2)^2))
+g <- ggplot(pa.test,aes(predict2,prize_3,col=jpfactor))
+
+g + 
+  geom_point() +
+  geom_smooth(method="lm",se=FALSE) 
+
 ```
 
 ## Validating on New Jersey Data
