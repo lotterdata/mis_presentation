@@ -10,7 +10,7 @@ output: ioslides_presentation
 
 - Players prefer some numbers, such as family birthdays, 7's, etc.
 - Direct data exist but are not public, so how can we document this? 
-- Can back out by relating number of winners to numbers drawn.
+- Can gain some insight by relating number of winners to numbers drawn.
 - Number of winners is only informative if total number of players is known. 
 - Otherwise we can model parimutuel prizes as a function of the numbers drawn.
 
@@ -126,6 +126,19 @@ tx1 <- glm(winners_3~draw_sum,data=tx.train,
 knitr::kable(summary(tx1)$coefficients,digits=4)
 ```
 
+## Validating on Recent Data
+
+```{r}
+tx.test$predict <- predict(tx1,tx.test,type="response")
+```
+
+```{r,echo=FALSE}
+library(ggplot2)
+g <- ggplot(tx.test,aes(predict,winners_3))
+
+g + 
+  geom_point() 
+```
 
 ## Modeling Prize Amounts
 
@@ -177,7 +190,6 @@ pa.train <- mutate(pa.train,range=n5-n1) %>%
                   sqrt((((n2-n1)^2+(n3-n2)^2+(n4-n3)^2+(n5-n4)^2)/4)-
                                ((n5-n1)/4)^2)) 
 ```
-
 
 ## Some Refinements
 
@@ -279,25 +291,9 @@ tsjp.train <- split(pa.train,pa.train$jpfactor)
 
 pai <- lapply(tsjp.train, 
               function(x) lm(prize_3~draw_sum+range+spacing,data=x))
-
 ```
 
 ## Validating on Recent Data
-
-```{r}
-tx.test$predict <- predict(tx1,tx.test,type="response")
-```
-
-```{r,echo=FALSE}
-g <- ggplot(tx.test,aes(predict,winners_3))
-
-g + 
-  geom_point() 
-```
-
-
-## Validating on Recent Data
-
 
 ```{r}
 pa.test <- mutate(pa.test,range=n5-n1) %>%
@@ -323,6 +319,7 @@ pa.test$jpfactor <- sapply(pa.test$jpfactor,rename)
 pa.test$predict1 <- predict(pa1,pa.test)
 pa.test$predict2 <- predict(pa2,pa.test)
 ```
+
 
 ## Validating on Recent Data
 
@@ -356,7 +353,11 @@ tsjp.test[[1]]$predict3 <- predict(pai[[1]],tsjp.test[[1]])
 tsjp.test[[2]]$predict3 <- predict(pai[[2]],tsjp.test[[2]])
 tsjp.test[[3]]$predict3 <- predict(pai[[3]],tsjp.test[[3]])
 tsjp.test[[4]]$predict3 <- predict(pai[[4]],tsjp.test[[4]])
+```
 
+## Validating on Recent Data
+
+```{r,echo=FALSE}
 results3 <- data.frame(predict=c(tsjp.test[[1]]$predict3,
                                      tsjp.test[[2]]$predict3,
                                      tsjp.test[[3]]$predict3,
@@ -364,15 +365,16 @@ results3 <- data.frame(predict=c(tsjp.test[[1]]$predict3,
                        actual=c(tsjp.test[[1]]$prize_3,
                                     tsjp.test[[2]]$prize_3,
                                     tsjp.test[[3]]$prize_3,
-                                    tsjp.test[[4]]$prize_3)
+                                    tsjp.test[[4]]$prize_3),
+                       jpfactor=c(tsjp.test[[1]]$jpfactor,
+                                    tsjp.test[[2]]$jpfactor,
+                                    tsjp.test[[3]]$jpfactor,
+                                    tsjp.test[[4]]$jpfactor
+                           )
                        )
-```
 
-## Validating on Recent Data
-
-```{r,echo=FALSE}
 sqrt(mean((results3$actual-results3$predict)^2))
-g <- ggplot(results3,aes(predict,actual))
+g <- ggplot(results3,aes(predict,actual,col=jpfactor))
 
 g + 
   geom_point() +
@@ -397,27 +399,46 @@ nj.test <- read.table("nj_data\\nj_cash5.csv",header=TRUE,sep=",") %>%
 ## Validating on New Jersey Data
 
 ```{r}
-nj.test$drawdate <- as.Date(as.character(nj.test$drawdate))
+prize.adjust <- mean(nj.test$prize_3)/mean(pa.actual$prize_3)
+nj.test$predict1 <- prize.adjust*predict(pa1,nj.test)
+nj.test$predict2 <- prize.adjust*predict(pa2,nj.test)
+```
 
-draw.since.jp.nj <- function(x) {
-    jp.dates <- filter(nj.test, prize_5 > 0 & drawdate < x) %>%
-                arrange(desc(drawdate))
-                    
-    return(nrow(filter(nj.test,
-                       drawdate > jp.dates$drawdate[1] & 
-                       drawdate <= x)))
-}
+## Validating on New Jersey Data
 
-nj.test$draw.since.jp <- sapply(nj.test$drawdate,draw.since.jp.nj)
+```{r,echo=FALSE}
 
-nj.test<- filter(nj.test, drawdate > 
-                       min(nj.test$drawdate[nj.test$prize_5>0]))
+sqrt(mean((nj.test$prize_3-nj.test$predict1)^2))
+g <- ggplot(nj.test,aes(predict1,prize_3))
+
+g + 
+  geom_point() +
+  geom_smooth(method="lm",se=FALSE) 
+```
+
+## Validating on New Jersey Data
+
+```{r,echo=FALSE}
+sqrt(mean((nj.test$prize_3-nj.test$predict2)^2))
+g <- ggplot(nj.test,aes(predict2,prize_3))
+
+g + 
+  geom_point() +
+  geom_smooth(method="lm",se=FALSE) 
 ```
 
 
-## Comment on Deriving Player Choices
-
 ## Getting Data
+
+* New Jersey was all manual.  
+<https://www.njlottery.com/en-us/drawgames/dailygames/jerseycash.html>
+
+* Pennsylvania was semi-manual. You can choose "Cash 5" and a year from the page below and store the resulting
+page in a text file. Then you can parse these files to get the URLS and
+scrape the appropriate pages.  
+<http://www.palottery.state.pa.us/Games/Past-Winning-Numbers.aspx>  
+
+* Texas was fully automated!
 
 ## References
 
